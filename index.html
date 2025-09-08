@@ -1,40 +1,4 @@
-const AlertCircle = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        );
-
-        // Excel export functionality
-        const exportToExcel = (data, filename) => {
-            // Create CSV content
-            const headers = ['Status', 'Retailer', 'Store Name', 'Store Number', 'Address', 'City', 'State', 'ZIP', 'Latitude', 'Longitude'];
-            const csvContent = [
-                headers.join(','),
-                ...data.map(store => [
-                    `"${store.status}"`,
-                    `"${store.retailer}"`,
-                    `"${store.storeName}"`,
-                    `"${store.storeNumber}"`,
-                    `"${store.address}"`,
-                    `"${store.city}"`,
-                    `"${store.state}"`,
-                    `"${store.zip}"`,
-                    store.latitude,
-                    store.longitude
-                ].join(','))
-            ].join('\n');
-
-            // Create and download file
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -59,17 +23,14 @@ const AlertCircle = ({ className }) => (
 
         // Configuration - FULLY CONFIGURED
         const CONFIG = {
-            // Your NEW Google Sheet ID (extracted from URL)
+            // Your Google Sheet ID
             SHEET_ID: '1SzcwBIooLjgc8lVcXFyPM7UHc5eaav1y297VeRSOhlg',
             
             // Your Freedom THD Stores sheet tab name
             SHEET_NAME: 'Freedom THD Stores',
             
-            // Your Google API Key (same as before)
+            // Your Google API Key
             API_KEY: 'AIzaSyBHcVkUgYLoJnNKpTecRUpAyMHU-T8HqFY',
-            
-            // Google Maps API Key (same as above)
-            MAPS_API_KEY: 'AIzaSyBHcVkUgYLoJnNKpTecRUpAyMHU-T8HqFY',
             
             // Auto-refresh interval in minutes (set to 0 to disable)
             REFRESH_MINUTES: 5
@@ -92,12 +53,6 @@ const AlertCircle = ({ className }) => (
             </svg>
         );
 
-        const ExternalLink = ({ className }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-        );
-
         const Loader = ({ className }) => (
             <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -117,6 +72,42 @@ const AlertCircle = ({ className }) => (
             </svg>
         );
 
+        const AlertCircle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        // Excel export functionality
+        const exportToExcel = (data, filename) => {
+            const headers = ['Status', 'Retailer', 'Store Name', 'Store Number', 'Address', 'City', 'State', 'ZIP', 'Latitude', 'Longitude'];
+            const csvContent = [
+                headers.join(','),
+                ...data.map(store => [
+                    `"${store.status}"`,
+                    `"${store.retailer}"`,
+                    `"${store.storeName}"`,
+                    `"${store.storeNumber}"`,
+                    `"${store.address}"`,
+                    `"${store.city}"`,
+                    `"${store.state}"`,
+                    `"${store.zip}"`,
+                    store.latitude,
+                    store.longitude
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
         // Initialize Google Map
         window.initMap = function() {
             console.log('Google Maps API loaded');
@@ -131,6 +122,7 @@ const AlertCircle = ({ className }) => (
             const [statusFilter, setStatusFilter] = useState('all');
             const [stateFilter, setStateFilter] = useState('all');
             const [selectedStore, setSelectedStore] = useState(null);
+            const [debugInfo, setDebugInfo] = useState('');
             const mapRef = useRef(null);
             const [mapLoaded, setMapLoaded] = useState(false);
 
@@ -165,10 +157,9 @@ const AlertCircle = ({ className }) => (
             const initializeMap = () => {
                 if (!window.google || !mapRef.current) return;
 
-                // Create map centered on US
                 map = new window.google.maps.Map(mapRef.current, {
                     zoom: 4,
-                    center: { lat: 39.8283, lng: -98.5795 }, // Center of US
+                    center: { lat: 39.8283, lng: -98.5795 },
                     mapTypeId: 'roadmap',
                     styles: [
                         {
@@ -223,14 +214,9 @@ const AlertCircle = ({ className }) => (
                     });
 
                     marker.addListener('click', () => {
-                        // Close any open info windows
                         markers.forEach(m => m.infoWindow && m.infoWindow.close());
-                        
-                        // Open this info window
                         infoWindow.open(map, marker);
                         marker.infoWindow = infoWindow;
-                        
-                        // Also update the side panel
                         setSelectedStore(store);
                     });
 
@@ -243,7 +229,6 @@ const AlertCircle = ({ className }) => (
                     markers.forEach(marker => bounds.extend(marker.getPosition()));
                     map.fitBounds(bounds);
                     
-                    // Ensure we don't zoom in too much
                     const listener = window.google.maps.event.addListener(map, 'idle', function() {
                         if (map.getZoom() > 10) map.setZoom(10);
                         window.google.maps.event.removeListener(listener);
@@ -255,13 +240,12 @@ const AlertCircle = ({ className }) => (
                 try {
                     setLoading(true);
                     setError('');
+                    setDebugInfo('');
 
-                    // Use the exact sheet name with asterisks
                     const encodedSheetName = encodeURIComponent(CONFIG.SHEET_NAME);
                     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodedSheetName}?key=${CONFIG.API_KEY}`;
                     
                     console.log('Fetching from URL:', url);
-                    console.log('Sheet name being used:', CONFIG.SHEET_NAME);
                     
                     const response = await fetch(url);
                     
@@ -278,12 +262,12 @@ const AlertCircle = ({ className }) => (
                         throw new Error('No data found in the specified sheet');
                     }
 
-                    const parsedStores = parseGoogleSheetsData(data.values);
+                    const { stores: parsedStores, debugInfo: debug } = parseGoogleSheetsData(data.values);
                     setStores(parsedStores);
+                    setDebugInfo(debug);
                     setLastUpdated(new Date());
                     console.log('Loaded stores:', parsedStores.length);
 
-                    // Add markers to map if map is loaded
                     if (mapLoaded) {
                         addMarkersToMap(parsedStores);
                     }
@@ -298,61 +282,110 @@ const AlertCircle = ({ className }) => (
 
             const parseGoogleSheetsData = (values) => {
                 const stores = [];
+                let debugInfo = '';
+                let skippedRows = 0;
+                let invalidCoords = 0;
+                let wrongStatus = 0;
                 
                 console.log('Raw sheet data:', values);
                 console.log('Header row:', values[0]);
+                console.log('Total rows in sheet:', values.length);
                 
-                // Skip header row (index 0) and process data rows
+                // Check first few rows to understand structure
+                const sampleRows = values.slice(0, 5);
+                sampleRows.forEach((row, idx) => {
+                    console.log(`Sample Row ${idx}:`, row, `(${row.length} columns)`);
+                });
+                
+                debugInfo += `Total rows in sheet: ${values.length}\n`;
+                debugInfo += `Header row: ${values[0]?.join(' | ')}\n`;
+                debugInfo += `Sample data structure:\n`;
+                
+                // Process all rows after header
                 for (let i = 1; i < values.length; i++) {
                     const row = values[i];
                     
-                    console.log(`Row ${i}:`, row);
+                    if (row.length === 0) continue; // Skip completely empty rows
                     
-                    // Ensure we have enough columns (need at least column Q = index 16)
-                    if (row.length >= 17) {
-                        const status = row[0]?.toString().trim().toLowerCase(); // Column A (index 0)
-                        console.log(`Row ${i} STATUS (Column A):`, `"${status}"`);
-                        
-                        // Include stores with Open, Reserved, or Staffed status
-                        if (['open', 'reserved', 'staffed'].includes(status)) {
-                            const lat = parseFloat(row[15]); // Column P (index 15) - Latitude
-                            const lng = parseFloat(row[16]); // Column Q (index 16) - Longitude
-                            
-                            console.log(`Row ${i} coordinates (P=${lat}, Q=${lng}):`, lat, lng);
-                            
-                            // Only add if we have valid coordinates
-                            if (!isNaN(lat) && !isNaN(lng)) {
-                                const store = {
-                                    status: row[0]?.toString().trim() || '',          // Column A - STATUS
-                                    reserveLink: row[1]?.toString().trim() || '',     // Column B - RESERVE LINK  
-                                    retailer: row[2]?.toString().trim() || '',        // Column C - RETAILER
-                                    storeNumber: row[3]?.toString().trim() || '',     // Column D - STORE #
-                                    storeName: row[4]?.toString().trim() || '',       // Column E - STORE NAME
-                                    address: row[5]?.toString().trim() || '',         // Column F - ADDRESS
-                                    city: row[6]?.toString().trim() || '',            // Column G - CITY
-                                    state: row[7]?.toString().trim() || '',           // Column H - STATE
-                                    zip: row[8]?.toString().trim() || '',             // Column I - ZIP
-                                    latitude: lat,                                     // Column P - Latitude
-                                    longitude: lng                                     // Column Q - Longitude
-                                };
-                                console.log(`Adding store ${i}:`, store);
-                                stores.push(store);
-                            } else {
-                                console.log(`Row ${i} skipped - invalid coordinates P=${lat}, Q=${lng}`);
-                            }
-                        } else {
-                            console.log(`Row ${i} skipped - status "${status}" not in allowed list`);
-                        }
-                    } else {
-                        console.log(`Row ${i} skipped - insufficient columns (need 17, has ${row.length})`);
+                    // Check if we have enough columns for the minimum required data
+                    if (row.length < 10) {
+                        skippedRows++;
+                        continue;
                     }
+                    
+                    const status = row[0]?.toString().trim().toLowerCase();
+                    
+                    // Check for valid status
+                    if (!['open', 'reserved', 'staffed'].includes(status)) {
+                        wrongStatus++;
+                        continue;
+                    }
+                    
+                    // Try to find coordinates - they might be in different columns
+                    let lat, lng;
+                    
+                    // Check the expected positions first (columns P and Q = 15 and 16)
+                    if (row.length >= 17) {
+                        lat = parseFloat(row[15]);
+                        lng = parseFloat(row[16]);
+                    }
+                    
+                    // If not found or invalid, search for coordinates in other columns
+                    if (isNaN(lat) || isNaN(lng)) {
+                        for (let col = 8; col < row.length; col++) {
+                            const val = parseFloat(row[col]);
+                            if (!isNaN(val)) {
+                                // Latitude is typically between -90 and 90
+                                if (val >= -90 && val <= 90 && isNaN(lat)) {
+                                    lat = val;
+                                }
+                                // Longitude is typically between -180 and 180
+                                else if (val >= -180 && val <= 180 && isNaN(lng) && val !== lat) {
+                                    lng = val;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If we still don't have valid coordinates, skip this row
+                    if (isNaN(lat) || isNaN(lng)) {
+                        invalidCoords++;
+                        if (i < 10) { // Log first 10 problematic rows for debugging
+                            console.log(`Row ${i} coordinates issue:`, row);
+                        }
+                        continue;
+                    }
+                    
+                    // Create store object with available data
+                    const store = {
+                        status: row[0]?.toString().trim() || '',
+                        reserveLink: row[1]?.toString().trim() || '',
+                        retailer: row[2]?.toString().trim() || '',
+                        storeNumber: row[3]?.toString().trim() || '',
+                        storeName: row[4]?.toString().trim() || '',
+                        address: row[5]?.toString().trim() || '',
+                        city: row[6]?.toString().trim() || '',
+                        state: row[7]?.toString().trim() || '',
+                        zip: row[8]?.toString().trim() || '',
+                        latitude: lat,
+                        longitude: lng
+                    };
+                    
+                    stores.push(store);
                 }
                 
-                console.log('Final parsed stores:', stores.length, stores);
-                return stores;
+                debugInfo += `\nProcessing Results:\n`;
+                debugInfo += `- Valid stores found: ${stores.length}\n`;
+                debugInfo += `- Rows with insufficient columns: ${skippedRows}\n`;
+                debugInfo += `- Rows with invalid status: ${wrongStatus}\n`;
+                debugInfo += `- Rows with invalid coordinates: ${invalidCoords}\n`;
+                
+                console.log('Parsing summary:', { stores: stores.length, skippedRows, invalidCoords, wrongStatus });
+                console.log('Final parsed stores:', stores.slice(0, 3)); // Show first 3 stores
+                
+                return { stores, debugInfo };
             };
 
-            // Initialize map when Google Maps API loads
             useEffect(() => {
                 const checkGoogleMaps = () => {
                     if (window.google && window.google.maps) {
@@ -364,19 +397,16 @@ const AlertCircle = ({ className }) => (
                 checkGoogleMaps();
             }, []);
 
-            // Update markers when stores change
             useEffect(() => {
                 if (mapLoaded && stores.length > 0) {
                     addMarkersToMap(filteredStores);
                 }
             }, [stores, filteredStores, mapLoaded]);
 
-            // Initial load
             useEffect(() => {
                 fetchFromGoogleSheets();
             }, []);
 
-            // Auto-refresh setup
             useEffect(() => {
                 if (CONFIG.REFRESH_MINUTES > 0) {
                     const interval = setInterval(() => {
@@ -415,14 +445,13 @@ const AlertCircle = ({ className }) => (
 
             return (
                 <div className="w-full h-screen bg-gray-50 flex flex-col">
-                    {/* Header */}
                     <div className="bg-white shadow-sm border-b px-4 md:px-6 py-4">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                             <h1 className="text-xl md:text-2xl font-bold text-gray-900">Freedom THD Stores Map</h1>
                             <div className="flex gap-2">
                                 <button
                                     onClick={handleExportToExcel}
-                                    className="px-3 md:px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center gap-2 text-sm md:text-base touch-manipulation"
+                                    className="px-3 md:px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center gap-2 text-sm md:text-base"
                                 >
                                     <Download className="w-4 h-4" />
                                     <span className="hidden sm:inline">Export to Excel</span>
@@ -431,7 +460,7 @@ const AlertCircle = ({ className }) => (
                                 <button
                                     onClick={fetchFromGoogleSheets}
                                     disabled={loading}
-                                    className="px-3 md:px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm md:text-base touch-manipulation"
+                                    className="px-3 md:px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm md:text-base"
                                 >
                                     {loading ? <Loader className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                                     <span className="hidden sm:inline">Refresh Data</span>
@@ -447,6 +476,15 @@ const AlertCircle = ({ className }) => (
                             </div>
                         )}
 
+                        {debugInfo && (
+                            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <details>
+                                    <summary className="cursor-pointer text-blue-700 font-medium">Debug Information</summary>
+                                    <pre className="text-xs mt-2 text-blue-600 overflow-auto">{debugInfo}</pre>
+                                </details>
+                            </div>
+                        )}
+
                         {lastUpdated && (
                             <div className="mb-4 text-xs md:text-sm text-gray-600">
                                 Last updated: {lastUpdated.toLocaleString()}
@@ -456,23 +494,21 @@ const AlertCircle = ({ className }) => (
                             </div>
                         )}
 
-                        {/* Status Summary */}
                         <div className="mb-4 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm">
-                            <div className="flex items-center gap-2 touch-manipulation">
+                            <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
                                 <span>Open: {statusCounts.open || 0}</span>
                             </div>
-                            <div className="flex items-center gap-2 touch-manipulation">
+                            <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                                 <span>Reserved: {statusCounts.reserved || 0}</span>
                             </div>
-                            <div className="flex items-center gap-2 touch-manipulation">
+                            <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
                                 <span>Staffed: {statusCounts.staffed || 0}</span>
                             </div>
                         </div>
                         
-                        {/* Filters */}
                         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 items-stretch sm:items-center">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
@@ -481,7 +517,7 @@ const AlertCircle = ({ className }) => (
                                     placeholder="Search stores..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="flex-1 px-3 py-2 border rounded-md text-sm md:text-base touch-manipulation"
+                                    className="flex-1 px-3 py-2 border rounded-md text-sm md:text-base"
                                 />
                             </div>
                             
@@ -490,7 +526,7 @@ const AlertCircle = ({ className }) => (
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="px-3 py-2 border rounded-md text-sm md:text-base touch-manipulation min-w-0"
+                                    className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0"
                                 >
                                     <option value="all">All Status</option>
                                     <option value="open">Open</option>
@@ -502,7 +538,7 @@ const AlertCircle = ({ className }) => (
                             <select
                                 value={stateFilter}
                                 onChange={(e) => setStateFilter(e.target.value)}
-                                className="px-3 py-2 border rounded-md text-sm md:text-base touch-manipulation min-w-0"
+                                className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0"
                             >
                                 <option value="all">All States</option>
                                 {uniqueStates.map(state => (
@@ -517,7 +553,6 @@ const AlertCircle = ({ className }) => (
                     </div>
 
                     <div className="flex-1 flex">
-                        {/* Google Map */}
                         <div className="flex-1 relative">
                             <div ref={mapRef} id="map" className="w-full h-full"></div>
                             
@@ -531,7 +566,6 @@ const AlertCircle = ({ className }) => (
                             )}
                         </div>
                         
-                        {/* Store Details Panel */}
                         {selectedStore && (
                             <div className="w-full sm:w-80 bg-white shadow-lg border-l overflow-y-auto">
                                 <div className="p-4 md:p-6">
@@ -542,7 +576,7 @@ const AlertCircle = ({ className }) => (
                                         </div>
                                         <button
                                             onClick={() => setSelectedStore(null)}
-                                            className="text-gray-400 hover:text-gray-600 text-2xl ml-2 touch-manipulation flex-shrink-0"
+                                            className="text-gray-400 hover:text-gray-600 text-2xl ml-2 flex-shrink-0"
                                         >
                                             ×
                                         </button>
