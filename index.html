@@ -394,7 +394,19 @@
                         setTimeout(checkGoogleMaps, 100);
                     }
                 };
-                checkGoogleMaps();
+                
+                // Listen for Google Maps API loaded event
+                const handleGoogleMapsLoaded = () => {
+                    console.log('Google Maps loaded event received');
+                    checkGoogleMaps();
+                };
+                
+                window.addEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+                checkGoogleMaps(); // Initial check
+                
+                return () => {
+                    window.removeEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+                };
             }, []);
 
             useEffect(() => {
