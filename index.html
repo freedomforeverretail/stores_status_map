@@ -321,54 +321,35 @@
                         continue;
                     }
                     
-                    // Try to find coordinates - they might be in different columns
-                    let lat, lng;
+                    // Parse coordinates from your specific columns
+                    // Latitude is column Q (index 16), Longitude is column R (index 17)
+                    const lat = parseFloat(row[16]); // Column Q - Latitude
+                    const lng = parseFloat(row[17]); // Column R - Longitude
                     
-                    // Check the expected positions first (columns P and Q = 15 and 16)
-                    if (row.length >= 17) {
-                        lat = parseFloat(row[15]);
-                        lng = parseFloat(row[16]);
-                    }
-                    
-                    // If not found or invalid, search for coordinates in other columns
-                    if (isNaN(lat) || isNaN(lng)) {
-                        for (let col = 8; col < row.length; col++) {
-                            const val = parseFloat(row[col]);
-                            if (!isNaN(val)) {
-                                // Latitude is typically between -90 and 90
-                                if (val >= -90 && val <= 90 && isNaN(lat)) {
-                                    lat = val;
-                                }
-                                // Longitude is typically between -180 and 180
-                                else if (val >= -180 && val <= 180 && isNaN(lng) && val !== lat) {
-                                    lng = val;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // If we still don't have valid coordinates, skip this row
+                    // If we don't have valid coordinates, skip this row
                     if (isNaN(lat) || isNaN(lng)) {
                         invalidCoords++;
                         if (i < 10) { // Log first 10 problematic rows for debugging
-                            console.log(`Row ${i} coordinates issue:`, row);
+                            console.log(`Row ${i} coordinates issue - Lat: ${row[16]}, Lng: ${row[17]}`, row);
                         }
                         continue;
                     }
                     
-                    // Create store object with available data
+                    // Create store object based on your headers:
+                    // Status, Owner, Reserved Date, ETA Launch, Official Launch Date, Division Name, Region Name, District #, Retailer, Reservation Link, Store No., Store Name, Street, City, State, Full Address, Latitude, Longitude, Zip, County, etc.
                     const store = {
-                        status: row[0]?.toString().trim() || '',
-                        reserveLink: row[1]?.toString().trim() || '',
-                        retailer: row[2]?.toString().trim() || '',
-                        storeNumber: row[3]?.toString().trim() || '',
-                        storeName: row[4]?.toString().trim() || '',
-                        address: row[5]?.toString().trim() || '',
-                        city: row[6]?.toString().trim() || '',
-                        state: row[7]?.toString().trim() || '',
-                        zip: row[8]?.toString().trim() || '',
-                        latitude: lat,
-                        longitude: lng
+                        status: row[0]?.toString().trim() || '',           // Column A - Status
+                        owner: row[1]?.toString().trim() || '',            // Column B - Owner  
+                        retailer: row[8]?.toString().trim() || '',         // Column I - Retailer
+                        reserveLink: row[9]?.toString().trim() || '',      // Column J - Reservation Link
+                        storeNumber: row[10]?.toString().trim() || '',     // Column K - Store No.
+                        storeName: row[11]?.toString().trim() || '',       // Column L - Store Name
+                        address: row[12]?.toString().trim() || '',         // Column M - Street
+                        city: row[13]?.toString().trim() || '',            // Column N - City
+                        state: row[14]?.toString().trim() || '',           // Column O - State
+                        zip: row[18]?.toString().trim() || '',             // Column S - Zip
+                        latitude: lat,                                      // Column Q - Latitude
+                        longitude: lng                                      // Column R - Longitude
                     };
                     
                     stores.push(store);
