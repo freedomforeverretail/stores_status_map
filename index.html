@@ -228,7 +228,7 @@
                 markers.forEach(marker => marker.setMap(null));
                 markers = [];
 
-                // Add new markers with updated brand colors
+                // Add new markers - smaller size and no border
                 storeData.forEach(store => {
                     const marker = new window.google.maps.Marker({
                         position: { lat: store.latitude, lng: store.longitude },
@@ -238,9 +238,8 @@
                             path: window.google.maps.SymbolPath.CIRCLE,
                             fillColor: getStatusColor(store.status),
                             fillOpacity: 0.9,
-                            strokeColor: '#ffffff',
-                            strokeWeight: 0.5,
-                            scale: 10
+                            strokeWeight: 0,
+                            scale: 5
                         }
                     });
 
@@ -307,10 +306,6 @@
                     const parsedStores = parseGoogleSheetsData(data.values);
                     setStores(parsedStores);
                     setLastUpdated(new Date());
-
-                    if (mapLoaded) {
-                        addMarkersToMap(parsedStores);
-                    }
                     
                 } catch (err) {
                     console.error('Error fetching data:', err);
@@ -366,6 +361,27 @@
                 return stores;
             };
 
+            // Filter stores based on search and filters
+            const filteredStores = useMemo(() => {
+                return stores.filter(store => {
+                    // Search functionality - check store name, city, and retailer
+                    const searchLower = searchTerm.toLowerCase();
+                    const matchesSearch = !searchTerm || 
+                        store.storeName.toLowerCase().includes(searchLower) ||
+                        store.city.toLowerCase().includes(searchLower) ||
+                        store.retailer.toLowerCase().includes(searchLower) ||
+                        store.storeNumber.toLowerCase().includes(searchLower);
+                        
+                    // Status filter
+                    const matchesStatus = statusFilter === 'all' || store.status.toLowerCase() === statusFilter;
+                    
+                    // State filter
+                    const matchesState = stateFilter === 'all' || store.state === stateFilter;
+                    
+                    return matchesSearch && matchesStatus && matchesState;
+                });
+            }, [stores, searchTerm, statusFilter, stateFilter]);
+
             useEffect(() => {
                 const checkGoogleMaps = () => {
                     if (window.google && window.google.maps) {
@@ -387,16 +403,19 @@
                 };
             }, []);
 
+            // Update map markers when filtered stores change
             useEffect(() => {
-                if (mapLoaded && stores.length > 0) {
+                if (mapLoaded && filteredStores.length > 0) {
                     addMarkersToMap(filteredStores);
                 }
-            }, [stores, filteredStores, mapLoaded]);
+            }, [mapLoaded, filteredStores]);
 
+            // Initial data fetch
             useEffect(() => {
                 fetchFromGoogleSheets();
             }, []);
 
+            // Auto refresh
             useEffect(() => {
                 if (CONFIG.REFRESH_MINUTES > 0) {
                     const interval = setInterval(() => {
@@ -407,20 +426,10 @@
                 }
             }, []);
 
-            const filteredStores = useMemo(() => {
-                return stores.filter(store => {
-                    const matchesSearch = store.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                       store.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                       store.retailer.toLowerCase().includes(searchTerm.toLowerCase());
-                    const matchesStatus = statusFilter === 'all' || store.status.toLowerCase() === statusFilter;
-                    const matchesState = stateFilter === 'all' || store.state === stateFilter;
-                    
-                    return matchesSearch && matchesStatus && matchesState;
-                });
-            }, [stores, searchTerm, statusFilter, stateFilter]);
-
             const uniqueStates = [...new Set(stores.map(store => store.state))].sort();
-            const statusCounts = stores.reduce((acc, store) => {
+            
+            // Calculate status counts from filtered stores
+            const statusCounts = filteredStores.reduce((acc, store) => {
                 const status = store.status.toLowerCase();
                 acc[status] = (acc[status] || 0) + 1;
                 return acc;
@@ -494,10 +503,10 @@
                                 <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
                                 <input
                                     type="text"
-                                    placeholder="Search stores..."
+                                    placeholder="Search stores, cities, retailers..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="flex-1 px-3 py-2 border rounded-md text-sm md:text-base"
+                                    className="flex-1 px-3 py-2 border rounded-md text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                             
@@ -506,7 +515,7 @@
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0"
+                                    className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="all">All Status</option>
                                     <option value="open">Open</option>
@@ -518,7 +527,7 @@
                             <select
                                 value={stateFilter}
                                 onChange={(e) => setStateFilter(e.target.value)}
-                                className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0"
+                                className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="all">All States</option>
                                 {uniqueStates.map(state => (
