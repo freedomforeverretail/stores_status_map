@@ -228,7 +228,7 @@
                 markers.forEach(marker => marker.setMap(null));
                 markers = [];
 
-                // Add new markers - smaller size and no border
+                // Add new markers with enhanced border and shadow styling
                 storeData.forEach(store => {
                     const marker = new window.google.maps.Marker({
                         position: { lat: store.latitude, lng: store.longitude },
@@ -237,9 +237,10 @@
                         icon: {
                             path: window.google.maps.SymbolPath.CIRCLE,
                             fillColor: getStatusColor(store.status),
-                            fillOpacity: 0.9,
-                            strokeWeight: 0,
-                            scale: 5
+                            fillOpacity: 0.95,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 2,
+                            scale: 7
                         }
                     });
 
