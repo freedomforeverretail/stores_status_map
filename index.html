@@ -172,13 +172,15 @@
         // Create custom marker icon that matches side panel styling
         const createCustomMarkerIcon = (status, isHover = false) => {
             const colors = {
-                'open': '#2C5134',
-                'reserved': '#CDEA80',
-                'staffed': '#DB864E'
+                'open': '#2C5134',       // Dark green
+                'reserved': '#CDEA80',   // Lime green
+                'staffed': '#DB864E'     // Sorbet
             };
             
             const size = isHover ? 20 : 16;
             const shadowBlur = isHover ? 8 : 4;
+            const statusLower = status.toLowerCase().trim();
+            const fillColor = colors[statusLower] || '#6B7280';
             
             const svg = `
                 <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
@@ -191,7 +193,7 @@
                         cx="${size/2}" 
                         cy="${size/2}" 
                         r="${size/2 - 1}" 
-                        fill="${colors[status] || '#6B7280'}" 
+                        fill="${fillColor}" 
                         stroke="white" 
                         stroke-width="0.5"
                         filter="url(#shadow)"
