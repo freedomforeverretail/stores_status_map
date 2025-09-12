@@ -62,6 +62,12 @@
             background-color: #F9F1EC;
             color: #DB864E;
         }
+
+        /* Active filter styles */
+        .filter-active {
+            border-color: #3B82F6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+        }
     </style>
 </head>
 <body>
@@ -127,6 +133,12 @@
             </svg>
         );
 
+        const X = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        );
+
         // Excel export functionality
         const exportToExcel = (data, filename) => {
             const headers = ['Status', 'Retailer', 'Store Name', 'Store Number', 'Address', 'City', 'State', 'ZIP', 'Latitude', 'Longitude'];
@@ -155,6 +167,39 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        };
+
+        // Create custom marker icon that matches side panel styling
+        const createCustomMarkerIcon = (status, isHover = false) => {
+            const colors = {
+                'open': '#2C5134',
+                'reserved': '#CDEA80',
+                'staffed': '#DB864E'
+            };
+            
+            const size = isHover ? 20 : 16;
+            const shadowBlur = isHover ? 8 : 4;
+            
+            const svg = `
+                <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="${shadowBlur/4}" flood-color="rgba(0,0,0,0.3)"/>
+                        </filter>
+                    </defs>
+                    <circle 
+                        cx="${size/2}" 
+                        cy="${size/2}" 
+                        r="${size/2 - 1}" 
+                        fill="${colors[status] || '#6B7280'}" 
+                        stroke="white" 
+                        stroke-width="0.5"
+                        filter="url(#shadow)"
+                    />
+                </svg>
+            `;
+            
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
         };
 
         // Initialize Google Map
@@ -228,20 +273,34 @@
                 markers.forEach(marker => marker.setMap(null));
                 markers = [];
 
-                // Add new markers with enhanced border and shadow styling
+                // Add new markers with custom icons and hover effects
                 storeData.forEach(store => {
                     const marker = new window.google.maps.Marker({
                         position: { lat: store.latitude, lng: store.longitude },
                         map: map,
                         title: store.storeName,
                         icon: {
-                            path: window.google.maps.SymbolPath.CIRCLE,
-                            fillColor: getStatusColor(store.status),
-                            fillOpacity: 0.95,
-                            strokeColor: '#ffffff',
-                            strokeWeight: 2,
-                            scale: 7
+                            url: createCustomMarkerIcon(store.status),
+                            scaledSize: new window.google.maps.Size(16, 16),
+                            anchor: new window.google.maps.Point(8, 8)
                         }
+                    });
+
+                    // Add hover effects
+                    marker.addListener('mouseover', () => {
+                        marker.setIcon({
+                            url: createCustomMarkerIcon(store.status, true),
+                            scaledSize: new window.google.maps.Size(20, 20),
+                            anchor: new window.google.maps.Point(10, 10)
+                        });
+                    });
+
+                    marker.addListener('mouseout', () => {
+                        marker.setIcon({
+                            url: createCustomMarkerIcon(store.status),
+                            scaledSize: new window.google.maps.Size(16, 16),
+                            anchor: new window.google.maps.Point(8, 8)
+                        });
                     });
 
                     const statusDisplay = store.status.charAt(0).toUpperCase() + store.status.slice(1).toLowerCase();
@@ -383,6 +442,16 @@
                 });
             }, [stores, searchTerm, statusFilter, stateFilter]);
 
+            // Clear all filters
+            const clearAllFilters = () => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setStateFilter('all');
+            };
+
+            // Check if any filters are active
+            const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || stateFilter !== 'all';
+
             useEffect(() => {
                 const checkGoogleMaps = () => {
                     if (window.google && window.google.maps) {
@@ -507,7 +576,7 @@
                                     placeholder="Search stores, cities, retailers..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="flex-1 px-3 py-2 border rounded-md text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className={`flex-1 px-3 py-2 border rounded-md text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 ${searchTerm ? 'filter-active' : ''}`}
                                 />
                             </div>
                             
@@ -516,7 +585,7 @@
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className={`px-3 py-2 border rounded-md text-sm md:text-base min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusFilter !== 'all' ? 'filter-active' : ''}`}
                                 >
                                     <option value="all">All Status</option>
                                     <option value="open">Open</option>
@@ -528,13 +597,24 @@
                             <select
                                 value={stateFilter}
                                 onChange={(e) => setStateFilter(e.target.value)}
-                                className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className={`px-3 py-2 border rounded-md text-sm md:text-base min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${stateFilter !== 'all' ? 'filter-active' : ''}`}
                             >
                                 <option value="all">All States</option>
                                 {uniqueStates.map(state => (
                                     <option key={state} value={state}>{state}</option>
                                 ))}
                             </select>
+
+                            {hasActiveFilters && (
+                                <button
+                                    onClick={clearAllFilters}
+                                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm md:text-base"
+                                    title="Clear all filters"
+                                >
+                                    <X className="w-4 h-4" />
+                                    <span className="hidden md:inline">Clear</span>
+                                </button>
+                            )}
                             
                             <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">
                                 Showing {filteredStores.length} of {stores.length}
