@@ -13,6 +13,55 @@
     <style>
         body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
         #map { height: 100%; width: 100%; }
+        
+        /* Custom status marker styles */
+        .status-marker {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 0.5px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: inline-block;
+        }
+        
+        .status-marker.open {
+            background-color: #2C5134;
+        }
+        
+        .status-marker.reserved {
+            background-color: #CDEA80;
+        }
+        
+        .status-marker.staffed {
+            background-color: #DB864E;
+        }
+        
+        /* Status badge styles */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+        
+        .status-badge.open {
+            background-color: #E8F4EA;
+            color: #2C5134;
+        }
+        
+        .status-badge.reserved {
+            background-color: #F5F9E6;
+            color: #6B7C2F;
+        }
+        
+        .status-badge.staffed {
+            background-color: #F9F1EC;
+            color: #DB864E;
+        }
     </style>
 </head>
 <body>
@@ -68,7 +117,7 @@
 
         const Download = ({ className }) => (
             <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-4-4m4 4l4-4m5-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-4-4m4 4l4-4m5-2V7a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2h14a2 2 0 002-2V7z" />
             </svg>
         );
 
@@ -122,34 +171,33 @@
             const [statusFilter, setStatusFilter] = useState('all');
             const [stateFilter, setStateFilter] = useState('all');
             const [selectedStore, setSelectedStore] = useState(null);
-            const [debugInfo, setDebugInfo] = useState('');
             const mapRef = useRef(null);
             const [mapLoaded, setMapLoaded] = useState(false);
 
-            // Status configuration
+            // Status configuration with updated brand colors
             const getStatusColor = (status) => {
                 switch (status.toLowerCase()) {
-                    case 'open': return '#10B981';    // Green
-                    case 'reserved': return '#F59E0B'; // Yellow/Orange
-                    case 'staffed': return '#EF4444';  // Red
+                    case 'open': return '#2C5134';     // Dark green
+                    case 'reserved': return '#CDEA80'; // Lime green
+                    case 'staffed': return '#DB864E';  // Sorbet
                     default: return '#6B7280';         // Gray
                 }
             };
 
             const getStatusBgColor = (status) => {
                 switch (status.toLowerCase()) {
-                    case 'open': return '#D1FAE5';     // Light green
-                    case 'reserved': return '#FEF3C7'; // Light yellow
-                    case 'staffed': return '#FEE2E2';  // Light red
+                    case 'open': return '#E8F4EA';     // Light green
+                    case 'reserved': return '#F5F9E6'; // Light lime
+                    case 'staffed': return '#F9F1EC';  // Light sorbet
                     default: return '#F3F4F6';         // Light gray
                 }
             };
 
             const getStatusTextColor = (status) => {
                 switch (status.toLowerCase()) {
-                    case 'open': return '#065F46';     // Dark green
-                    case 'reserved': return '#92400E'; // Dark yellow
-                    case 'staffed': return '#991B1B';  // Dark red
+                    case 'open': return '#2C5134';     // Dark green
+                    case 'reserved': return '#6B7C2F'; // Darker lime
+                    case 'staffed': return '#DB864E';  // Sorbet
                     default: return '#374151';         // Dark gray
                 }
             };
@@ -171,7 +219,6 @@
                 });
 
                 setMapLoaded(true);
-                console.log('Google Map initialized');
             };
 
             const addMarkersToMap = (storeData) => {
@@ -181,7 +228,7 @@
                 markers.forEach(marker => marker.setMap(null));
                 markers = [];
 
-                // Add new markers
+                // Add new markers with updated brand colors
                 storeData.forEach(store => {
                     const marker = new window.google.maps.Marker({
                         position: { lat: store.latitude, lng: store.longitude },
@@ -190,10 +237,10 @@
                         icon: {
                             path: window.google.maps.SymbolPath.CIRCLE,
                             fillColor: getStatusColor(store.status),
-                            fillOpacity: 1,
+                            fillOpacity: 0.9,
                             strokeColor: '#ffffff',
-                            strokeWeight: 1,
-                            scale: 8
+                            strokeWeight: 0.5,
+                            scale: 10
                         }
                     });
 
@@ -201,14 +248,14 @@
 
                     const infoWindow = new window.google.maps.InfoWindow({
                         content: `
-                            <div style="padding: 8px; min-width: 200px;">
-                                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: bold;">${store.storeName}: ${store.storeNumber}</h3>
-                                <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: normal; color: #666;">${store.retailer}</h4>
-                                <p style="margin: 0 0 4px 0; font-size: 14px;">${store.address}</p>
-                                <p style="margin: 0 0 8px 0; font-size: 14px;">${store.city}, ${store.state} ${store.zip}</p>
-                                <p style="margin: 0; text-align: center;">
-                                    <span style="background: ${getStatusBgColor(store.status)}; color: ${getStatusTextColor(store.status)}; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 500;">${statusDisplay}</span>
-                                </p>
+                            <div style="padding: 12px; min-width: 220px; font-family: system-ui, -apple-system, sans-serif;">
+                                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #1F2937;">${store.storeName}: ${store.storeNumber}</h3>
+                                <h4 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 400; color: #6B7280;">${store.retailer}</h4>
+                                <p style="margin: 0 0 4px 0; font-size: 14px; color: #374151;">${store.address}</p>
+                                <p style="margin: 0 0 12px 0; font-size: 14px; color: #374151;">${store.city}, ${store.state} ${store.zip}</p>
+                                <div style="text-align: center;">
+                                    <span class="status-badge ${store.status.toLowerCase()}">${statusDisplay}</span>
+                                </div>
                             </div>
                         `
                     });
@@ -240,33 +287,26 @@
                 try {
                     setLoading(true);
                     setError('');
-                    setDebugInfo('');
 
                     const encodedSheetName = encodeURIComponent(CONFIG.SHEET_NAME);
                     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodedSheetName}?key=${CONFIG.API_KEY}`;
-                    
-                    console.log('Fetching from URL:', url);
                     
                     const response = await fetch(url);
                     
                     if (!response.ok) {
                         const errorData = await response.json();
-                        console.error('API Error Response:', errorData);
                         throw new Error(`Google Sheets API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
                     }
                     
                     const data = await response.json();
-                    console.log('Google Sheets response:', data);
                     
                     if (!data.values || data.values.length === 0) {
                         throw new Error('No data found in the specified sheet');
                     }
 
-                    const { stores: parsedStores, debugInfo: debug } = parseGoogleSheetsData(data.values);
+                    const parsedStores = parseGoogleSheetsData(data.values);
                     setStores(parsedStores);
-                    setDebugInfo(debug);
                     setLastUpdated(new Date());
-                    console.log('Loaded stores:', parsedStores.length);
 
                     if (mapLoaded) {
                         addMarkersToMap(parsedStores);
@@ -282,24 +322,6 @@
 
             const parseGoogleSheetsData = (values) => {
                 const stores = [];
-                let debugInfo = '';
-                let skippedRows = 0;
-                let invalidCoords = 0;
-                let wrongStatus = 0;
-                
-                console.log('Raw sheet data:', values);
-                console.log('Header row:', values[0]);
-                console.log('Total rows in sheet:', values.length);
-                
-                // Check first few rows to understand structure
-                const sampleRows = values.slice(0, 5);
-                sampleRows.forEach((row, idx) => {
-                    console.log(`Sample Row ${idx}:`, row, `(${row.length} columns)`);
-                });
-                
-                debugInfo += `Total rows in sheet: ${values.length}\n`;
-                debugInfo += `Header row: ${values[0]?.join(' | ')}\n`;
-                debugInfo += `Sample data structure:\n`;
                 
                 // Process all rows after header
                 for (let i = 1; i < values.length; i++) {
@@ -308,63 +330,40 @@
                     if (row.length === 0) continue; // Skip completely empty rows
                     
                     // Check if we have enough columns for the minimum required data
-                    if (row.length < 10) {
-                        skippedRows++;
-                        continue;
-                    }
+                    if (row.length < 10) continue;
                     
                     const status = row[0]?.toString().trim().toLowerCase();
                     
                     // Check for valid status
-                    if (!['open', 'reserved', 'staffed'].includes(status)) {
-                        wrongStatus++;
-                        continue;
-                    }
+                    if (!['open', 'reserved', 'staffed'].includes(status)) continue;
                     
                     // Parse coordinates from your specific columns
-                    // Latitude is column Q (index 16), Longitude is column R (index 17)
                     const lat = parseFloat(row[16]); // Column Q - Latitude
                     const lng = parseFloat(row[17]); // Column R - Longitude
                     
                     // If we don't have valid coordinates, skip this row
-                    if (isNaN(lat) || isNaN(lng)) {
-                        invalidCoords++;
-                        if (i < 10) { // Log first 10 problematic rows for debugging
-                            console.log(`Row ${i} coordinates issue - Lat: ${row[16]}, Lng: ${row[17]}`, row);
-                        }
-                        continue;
-                    }
+                    if (isNaN(lat) || isNaN(lng)) continue;
                     
-                    // Create store object based on your headers:
-                    // Status, Owner, Reserved Date, ETA Launch, Official Launch Date, Division Name, Region Name, District #, Retailer, Reservation Link, Store No., Store Name, Street, City, State, Full Address, Latitude, Longitude, Zip, County, etc.
+                    // Create store object
                     const store = {
-                        status: row[0]?.toString().trim() || '',           // Column A - Status
-                        owner: row[1]?.toString().trim() || '',            // Column B - Owner  
-                        retailer: row[8]?.toString().trim() || '',         // Column I - Retailer
-                        reserveLink: row[9]?.toString().trim() || '',      // Column J - Reservation Link
-                        storeNumber: row[10]?.toString().trim() || '',     // Column K - Store No.
-                        storeName: row[11]?.toString().trim() || '',       // Column L - Store Name
-                        address: row[12]?.toString().trim() || '',         // Column M - Street
-                        city: row[13]?.toString().trim() || '',            // Column N - City
-                        state: row[14]?.toString().trim() || '',           // Column O - State
-                        zip: row[18]?.toString().trim() || '',             // Column S - Zip
-                        latitude: lat,                                      // Column Q - Latitude
-                        longitude: lng                                      // Column R - Longitude
+                        status: row[0]?.toString().trim() || '',           
+                        owner: row[1]?.toString().trim() || '',            
+                        retailer: row[8]?.toString().trim() || '',         
+                        reserveLink: row[9]?.toString().trim() || '',      
+                        storeNumber: row[10]?.toString().trim() || '',     
+                        storeName: row[11]?.toString().trim() || '',       
+                        address: row[12]?.toString().trim() || '',         
+                        city: row[13]?.toString().trim() || '',            
+                        state: row[14]?.toString().trim() || '',           
+                        zip: row[18]?.toString().trim() || '',             
+                        latitude: lat,                                     
+                        longitude: lng                                     
                     };
                     
                     stores.push(store);
                 }
                 
-                debugInfo += `\nProcessing Results:\n`;
-                debugInfo += `- Valid stores found: ${stores.length}\n`;
-                debugInfo += `- Rows with insufficient columns: ${skippedRows}\n`;
-                debugInfo += `- Rows with invalid status: ${wrongStatus}\n`;
-                debugInfo += `- Rows with invalid coordinates: ${invalidCoords}\n`;
-                
-                console.log('Parsing summary:', { stores: stores.length, skippedRows, invalidCoords, wrongStatus });
-                console.log('Final parsed stores:', stores.slice(0, 3)); // Show first 3 stores
-                
-                return { stores, debugInfo };
+                return stores;
             };
 
             useEffect(() => {
@@ -376,14 +375,12 @@
                     }
                 };
                 
-                // Listen for Google Maps API loaded event
                 const handleGoogleMapsLoaded = () => {
-                    console.log('Google Maps loaded event received');
                     checkGoogleMaps();
                 };
                 
                 window.addEventListener('google-maps-loaded', handleGoogleMapsLoaded);
-                checkGoogleMaps(); // Initial check
+                checkGoogleMaps();
                 
                 return () => {
                     window.removeEventListener('google-maps-loaded', handleGoogleMapsLoaded);
@@ -403,7 +400,6 @@
             useEffect(() => {
                 if (CONFIG.REFRESH_MINUTES > 0) {
                     const interval = setInterval(() => {
-                        console.log('Auto-refreshing data...');
                         fetchFromGoogleSheets();
                     }, CONFIG.REFRESH_MINUTES * 60 * 1000);
 
@@ -469,15 +465,6 @@
                             </div>
                         )}
 
-                        {debugInfo && (
-                            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <details>
-                                    <summary className="cursor-pointer text-blue-700 font-medium">Debug Information</summary>
-                                    <pre className="text-xs mt-2 text-blue-600 overflow-auto">{debugInfo}</pre>
-                                </details>
-                            </div>
-                        )}
-
                         {lastUpdated && (
                             <div className="mb-4 text-xs md:text-sm text-gray-600">
                                 Last updated: {lastUpdated.toLocaleString()}
@@ -489,15 +476,15 @@
 
                         <div className="mb-4 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm">
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                <div className="status-marker open"></div>
                                 <span>Open: {statusCounts.open || 0}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div className="status-marker reserved"></div>
                                 <span>Reserved: {statusCounts.reserved || 0}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div className="status-marker staffed"></div>
                                 <span>Staffed: {statusCounts.staffed || 0}</span>
                             </div>
                         </div>
@@ -513,104 +500,3 @@
                                     className="flex-1 px-3 py-2 border rounded-md text-sm md:text-base"
                                 />
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                                <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0"
-                                >
-                                    <option value="all">All Status</option>
-                                    <option value="open">Open</option>
-                                    <option value="reserved">Reserved</option>
-                                    <option value="staffed">Staffed</option>
-                                </select>
-                            </div>
-
-                            <select
-                                value={stateFilter}
-                                onChange={(e) => setStateFilter(e.target.value)}
-                                className="px-3 py-2 border rounded-md text-sm md:text-base min-w-0"
-                            >
-                                <option value="all">All States</option>
-                                {uniqueStates.map(state => (
-                                    <option key={state} value={state}>{state}</option>
-                                ))}
-                            </select>
-                            
-                            <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">
-                                Showing {filteredStores.length} of {stores.length}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 flex">
-                        <div className="flex-1 relative">
-                            <div ref={mapRef} id="map" className="w-full h-full"></div>
-                            
-                            {loading && (
-                                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
-                                    <div className="flex items-center gap-3">
-                                        <Loader className="w-6 h-6 animate-spin text-blue-600" />
-                                        <span className="text-gray-700">Loading store data...</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {selectedStore && (
-                            <div className="w-full sm:w-80 bg-white shadow-lg border-l overflow-y-auto">
-                                <div className="p-4 md:p-6">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex-1 min-w-0">
-                                            <h2 className="text-lg md:text-xl font-bold truncate">{selectedStore.storeName}: {selectedStore.storeNumber}</h2>
-                                            <p className="text-sm text-gray-500">{selectedStore.retailer}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setSelectedStore(null)}
-                                            className="text-gray-400 hover:text-gray-600 text-2xl ml-2 flex-shrink-0"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                    
-                                    <div className="space-y-4">
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-700 mb-1">Status</div>
-                                            <div 
-                                                className="inline-block px-3 py-2 rounded-full text-sm font-medium"
-                                                style={{ 
-                                                    backgroundColor: getStatusBgColor(selectedStore.status),
-                                                    color: getStatusTextColor(selectedStore.status)
-                                                }}
-                                            >
-                                                {selectedStore.status.charAt(0).toUpperCase() + selectedStore.status.slice(1).toLowerCase()}
-                                            </div>
-                                        </div>
-                                        
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-700 mb-1">Store Number</div>
-                                            <div className="text-gray-900">{selectedStore.storeNumber}</div>
-                                        </div>
-                                        
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-700 mb-1">Address</div>
-                                            <div className="text-gray-900">
-                                                {selectedStore.address}<br/>
-                                                {selectedStore.city}, {selectedStore.state} {selectedStore.zip}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        ReactDOM.render(<FreedomTHDStoresMap />, document.getElementById('root'));
-    </script>
-</body>
-</html>
