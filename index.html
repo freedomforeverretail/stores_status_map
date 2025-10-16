@@ -19,7 +19,7 @@
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            border: 0.1px solid #ffffff;
+            border: 0.5px solid #ffffff;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             display: inline-block;
         }
@@ -426,16 +426,16 @@
                         owner: row[1]?.toString().trim() || '',            
                         retailer: row[8]?.toString().trim() || '',         
                         reserveLink: row[9]?.toString().trim() || '',      
-                        storeNumber: row[10]?.toString().trim() || '',     
-                        storeName: row[11]?.toString().trim() || '',       
-                        address: row[12]?.toString().trim() || '',         
-                        city: row[13]?.toString().trim() || '',            
-                        state: row[14]?.toString().trim() || '',           
-                        zip: row[18]?.toString().trim() || '',             
-                        latitude: lat,                                     
-                        longitude: lng,
-                        utility: row[23]?.toString().trim() || 'N/A',
-                        avgElectricityRate: row[24]?.toString().trim() || 'N/A'
+                        storeNumber: row[11]?.toString().trim() || '',     // Column L - Store Number
+                        storeName: row[12]?.toString().trim() || '',       // Column M - Store Name
+                        address: row[13]?.toString().trim() || '',         // Column N - Street
+                        city: row[14]?.toString().trim() || '',            // Column O - City
+                        state: row[15]?.toString().trim() || '',           // Column P - State
+                        latitude: lat,                                     // Column R - Latitude
+                        longitude: lng,                                    // Column S - Longitude
+                        zip: row[19]?.toString().trim() || '',             // Column T - Zip
+                        utility: row[23]?.toString().trim() || 'N/A',      // Column X - Utility
+                        avgElectricityRate: row[24]?.toString().trim() || 'N/A'  // Column Y - Avg Electricity Rate
                     };
                     
                     stores.push(store);
