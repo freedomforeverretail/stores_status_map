@@ -263,14 +263,21 @@
             };
 
             const addMarkersToMap = (storeData) => {
-                if (!map || !window.google) return;
+                if (!map || !window.google) {
+                    console.log('Map or Google not ready', { map: !!map, google: !!window.google });
+                    return;
+                }
+
+                console.log('Adding markers to map:', storeData.length);
 
                 // Clear existing markers
                 markers.forEach(marker => marker.setMap(null));
                 markers = [];
 
                 // Add new markers with standard Google Maps circles and branded colors
-                storeData.forEach(store => {
+                storeData.forEach((store, index) => {
+                    console.log(`Creating marker ${index}:`, store.storeName, store.status);
+                    
                     const marker = new window.google.maps.Marker({
                         position: { lat: store.latitude, lng: store.longitude },
                         map: map,
@@ -341,6 +348,8 @@
                     markers.push(marker);
                 });
 
+                console.log('Total markers created:', markers.length);
+
                 // Fit map to show all markers
                 if (markers.length > 0) {
                     const bounds = new window.google.maps.LatLngBounds();
@@ -405,8 +414,8 @@
                     if (!['open', 'reserved', 'staffed'].includes(status)) continue;
                     
                     // Parse coordinates from your specific columns
-                    const lat = parseFloat(row[16]); // Column Q - Latitude
-                    const lng = parseFloat(row[17]); // Column R - Longitude
+                    const lat = parseFloat(row[17]); // Column R - Latitude
+                    const lng = parseFloat(row[18]); // Column S - Longitude
                     
                     // If we don't have valid coordinates, skip this row
                     if (isNaN(lat) || isNaN(lng)) continue;
